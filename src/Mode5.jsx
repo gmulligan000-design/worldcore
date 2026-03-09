@@ -105,21 +105,23 @@ function DuelMap({ highlightCode }) {
     let d=""
     for(const poly of polys){
       for(const ring of poly){
-        const segs=[[]]
+        let px=null,py=null,started=false
         for(let i=0;i<ring.length;i++){
-          const[lo,la]=ring[i]
-          if(i>0&&Math.abs(lo-ring[i-1][0])>180)segs.push([])
-          segs[segs.length-1].push([Math.max(-179.9,Math.min(179.9,lo)),la])
-        }
-        for(const seg of segs){
-          if(seg.length<2)continue
-          let first=true
-          for(const[lo,la]of seg){
-            const[x,y]=proj(lo,la)
-            d+=(first?"M":"L")+x.toFixed(1)+","+y.toFixed(1);first=false
+          const lo=Math.max(-179.9,Math.min(179.9,ring[i][0]))
+          const la=Math.max(-89.9,Math.min(89.9,ring[i][1]))
+          const x=(lo+180)*(800/360)
+          const y=Math.max(0,Math.min(500,(90-la)*(500/180)))
+          if(px!==null&&(Math.abs(x-px)>200||Math.abs(y-py)>200)){
+            if(started)d+="Z"
+            d+="M"+x.toFixed(1)+","+y.toFixed(1)
+            started=true
+          } else {
+            d+=(started?"L":"M")+x.toFixed(1)+","+y.toFixed(1)
+            started=true
           }
-          d+="Z"
+          px=x;py=y
         }
+        if(started)d+="Z"
       }
     }
     return d
