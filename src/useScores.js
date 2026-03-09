@@ -2,20 +2,18 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 
 export function useScores() {
-  const [scores, setScores] = useState({ mode1: {}, mode2: {}, mode2holders: {}, mode2userscores: {}, mode3: {} })
+  const [scores, setScores] = useState({ mode1: {}, mode2: {}, mode2holders: {}, mode2userscores: {}, mode3: {}, mode4: {} })
   const [loading, setLoading] = useState(true)
 
   const fetchScores = async () => {
     const { data, error } = await supabase.from('scores').select('*')
     if (error) { console.error(error); return }
 
-    const mode1 = {}, mode2 = {}, mode2holders = {}, mode2userscores = {}, mode3 = {}
+    const mode1 = {}, mode2 = {}, mode2holders = {}, mode2userscores = {}, mode3 = {}, mode4 = {}
 
     data.forEach(row => {
       if (row.mode === 'mode1') {
-        if (!mode1[row.user_name] || row.value < mode1[row.user_name]) {
-          mode1[row.user_name] = row.value
-        }
+        if (!mode1[row.user_name] || row.value < mode1[row.user_name]) mode1[row.user_name] = row.value
       }
       if (row.mode === 'mode2') {
         if (!mode2userscores[row.user_name]) mode2userscores[row.user_name] = {}
@@ -26,13 +24,17 @@ export function useScores() {
         }
       }
       if (row.mode === 'mode3') {
-        if (!mode3[row.user_name] || row.value > mode3[row.user_name]) {
-          mode3[row.user_name] = row.value
+        if (!mode3[row.user_name] || row.value > mode3[row.user_name]) mode3[row.user_name] = row.value
+      }
+      if (row.mode === 'mode4') {
+        if (!mode4[row.user_name]) mode4[row.user_name] = {}
+        if (!mode4[row.user_name][row.letter] || row.value < mode4[row.user_name][row.letter]) {
+          mode4[row.user_name][row.letter] = row.value
         }
       }
     })
 
-    setScores({ mode1, mode2, mode2holders, mode2userscores, mode3 })
+    setScores({ mode1, mode2, mode2holders, mode2userscores, mode3, mode4 })
     setLoading(false)
   }
 
@@ -47,32 +49,30 @@ export function useScores() {
   const updateMode1 = async (userName, timeSeconds) => {
     const current = scores.mode1[userName]
     if (current && timeSeconds >= current) return
-    await supabase.from('scores').upsert(
-      { user_name: userName, mode: 'mode1', letter: '', value: timeSeconds },
-      { onConflict: 'user_name,mode,letter' }
-    )
+    await supabase.from('scores').upsert({ user_name: userName, mode: 'mode1', letter: '', value: timeSeconds }, { onConflict: 'user_name,mode,letter' })
     fetchScores()
   }
 
   const updateMode2 = async (userName, letter, timeSeconds) => {
     const current = scores.mode2userscores?.[userName]?.[letter]
     if (current && timeSeconds >= current) return
-    await supabase.from('scores').upsert(
-      { user_name: userName, mode: 'mode2', letter: letter, value: timeSeconds },
-      { onConflict: 'user_name,mode,letter' }
-    )
+    await supabase.from('scores').upsert({ user_name: userName, mode: 'mode2', letter: letter, value: timeSeconds }, { onConflict: 'user_name,mode,letter' })
     fetchScores()
   }
 
   const updateMode3 = async (userName, streak) => {
     const current = scores.mode3[userName]
     if (current && streak <= current) return
-    await supabase.from('scores').upsert(
-      { user_name: userName, mode: 'mode3', letter: '', value: streak },
-      { onConflict: 'user_name,mode,letter' }
-    )
+    await supabase.from('scores').upsert({ user_name: userName, mode: 'mode3', letter: '', value: streak }, { onConflict: 'user_name,mode,letter' })
     fetchScores()
   }
 
-  return { scores, loading, updateMode1, updateMode2, updateMode3 }
+  const updateMode4 = async (userName, continent, timeSeconds) => {
+    const current = scores.mode4?.[userName]?.[continent]
+    if (current && timeSeconds >= current) return
+    await supabase.from('scores').upsert({ user_name: userName, mode: 'mode4', letter: continent, value: timeSeconds }, { onConflict: 'user_name,mode,letter' })
+    fetchScores()
+  }
+
+  return { scores, loading, updateMode1, updateMode2, updateMode3, updateMode4 }
 }
