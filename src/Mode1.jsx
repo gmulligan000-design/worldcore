@@ -169,6 +169,9 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
               const isTiny=p.alpha2&&TINY_A2.has(p.alpha2)&&isWorld
               if(isTiny)return null
               const d=toD(p.geometry); if(!d)return null
+              // skip paths that span nearly full map width (antimeridian artifacts)
+              const xs=d.match(/[ML]([-\d.]+),/g)?.map(s=>parseFloat(s.slice(1)))
+              if(xs&&xs.length>1&&Math.max(...xs)-Math.min(...xs)>750)return null
               if(p.alpha2==="AQ")return null
               return <path key={i} d={d}
                 fill={ig?"#10B981":isWorld?"#3B82F6":"#1e3a5f"}

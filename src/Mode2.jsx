@@ -167,6 +167,9 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
               const isTiny = p.alpha2 && TINY_A2.has(p.alpha2) && (it || ig)
               if (isTiny) return null
               const d=toD(p.geometry); if(!d)return null
+              // skip paths that span nearly full map width (antimeridian artifacts)
+              const xs=d.match(/[ML]([-\d.]+),/g)?.map(s=>parseFloat(s.slice(1)))
+              if(xs&&xs.length>1&&Math.max(...xs)-Math.min(...xs)>750)return null
               // when done: missed = orange, guessed = green
               let fill = "#1e3a5f", stroke = "#0f2240"
               if (ig) { fill = "#10B981"; stroke = "#059669" }
