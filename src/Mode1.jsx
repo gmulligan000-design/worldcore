@@ -164,7 +164,7 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
                   <circle cx={pin.x} cy={pin.y} r={r} fill={pin.color} stroke="#fff" strokeWidth={Math.max(0.5,1.2/zoom)}/>
                   <line x1={pin.x} y1={pin.y-r} x2={pin.x} y2={pin.y-r-lineLen} stroke={pin.color} strokeWidth={Math.max(0.5,1.2/zoom)}/>
                   <rect x={pin.x-fontSize*2.2} y={pin.y-r-lineLen-fontSize*1.6} width={fontSize*4.4} height={fontSize*1.6} rx={fontSize*0.4} fill={pin.color} opacity={0.9}/>
-                  <text x={pin.x} y={pin.y-r-lineLen-fontSize*0.3} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold">{pin.a2}</text>
+                  <text x={pin.x} y={pin.y-r-lineLen-fontSize*0.3} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold">{i+1}</text>
                 </g>
               )
             })}

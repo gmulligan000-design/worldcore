@@ -156,7 +156,7 @@ function DuelMap({ highlightCode }) {
                   <circle cx={tinyPin.x} cy={tinyPin.y} r={r} fill="#F59E0B" stroke="#fff" strokeWidth={Math.max(0.5,1.2/zoom)}/>
                   <line x1={tinyPin.x} y1={tinyPin.y-r} x2={tinyPin.x} y2={tinyPin.y-r-lineLen} stroke="#F59E0B" strokeWidth={Math.max(0.5,1.2/zoom)}/>
                   <rect x={tinyPin.x-fontSize*2.2} y={tinyPin.y-r-lineLen-fontSize*1.6} width={fontSize*4.4} height={fontSize*1.6} rx={fontSize*0.4} fill="#F59E0B" opacity={0.9}/>
-                  <text x={tinyPin.x} y={tinyPin.y-r-lineLen-fontSize*0.3} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold">{highlightCode}</text>
+                  <text x={tinyPin.x} y={tinyPin.y-r-lineLen-fontSize*0.3} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold">?</text>
                 </g>
               )
             })()}
