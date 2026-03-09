@@ -1,21 +1,24 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { COUNTRIES, resolveCountry, fmtPop } from './data'
 
 export default function Mode3({ user, scores, updateMode3, onBack }) {
   const getNext = () => COUNTRIES[Math.floor(Math.random() * COUNTRIES.length)]
   const [current, setCurrent] = useState(() => getNext())
   const [streak, setStreak] = useState(0)
+  const streakRef = useRef(0)
   const [input, setInput] = useState("")
-  const [phase, setPhase] = useState("playing") // playing | correct | wrong
+  const [phase, setPhase] = useState("playing")
   const [wrongFlash, setWrongFlash] = useState(false)
   const [reveal, setReveal] = useState(false)
+  const [savedStreak, setSavedStreak] = useState(null)
 
   const handleGuess = () => {
     const val = input.trim()
     if (!val) return
     const resolved = resolveCountry(val)
     if (resolved === current.name) {
-      const ns = streak + 1
+      const ns = streakRef.current + 1
+      streakRef.current = ns
       setStreak(ns)
       setPhase("correct")
       updateMode3(user, ns)
@@ -23,15 +26,23 @@ export default function Mode3({ user, scores, updateMode3, onBack }) {
         setCurrent(getNext()); setInput(""); setPhase("playing"); setReveal(false)
       }, 1200)
     } else {
+      const finalStreak = streakRef.current
+      setSavedStreak(finalStreak)
       setPhase("wrong")
       setWrongFlash(true)
-      updateMode3(user, streak)
+      updateMode3(user, finalStreak)
       setTimeout(() => { setWrongFlash(false); setReveal(true) }, 500)
     }
   }
 
   const handleNext = () => {
-    setStreak(0); setCurrent(getNext()); setInput(""); setPhase("playing"); setReveal(false)
+    streakRef.current = 0
+    setStreak(0)
+    setSavedStreak(null)
+    setCurrent(getNext())
+    setInput("")
+    setPhase("playing")
+    setReveal(false)
   }
 
   const streakScores = Object.entries(scores.mode3)
@@ -55,10 +66,9 @@ export default function Mode3({ user, scores, updateMode3, onBack }) {
             </div>
           </div>
         </div>
-
         <div style={{
           background: phase === "correct" ? "linear-gradient(135deg,#0f2a1e,#0f172a)" : phase === "wrong" ? "linear-gradient(135deg,#2a0f0f,#0f172a)" : "linear-gradient(135deg,#0f1f3f,#0f172a)",
-          border: `2px solid ${phase === "correct" ? "#10B981" : phase === "wrong" ? "#EF4444" : "#1e3a5f"}`,
+          border: "2px solid " + (phase === "correct" ? "#10B981" : phase === "wrong" ? "#EF4444" : "#1e3a5f"),
           borderRadius: 24, padding: 32, marginBottom: 24, textAlign: "center", transition: "all 0.3s",
         }}>
           <div style={{ marginBottom: 24 }}>
@@ -77,10 +87,14 @@ export default function Mode3({ user, scores, updateMode3, onBack }) {
             <div style={{ marginTop: 20, padding: "16px", background: "#1a0f0f", borderRadius: 12, border: "1px solid #EF4444" }}>
               <div style={{ fontSize: 12, color: "#EF4444", letterSpacing: 2, marginBottom: 4 }}>ANSWER WAS</div>
               <div style={{ fontSize: 28, fontWeight: 900, color: "#e2e8f0" }}>{current.flag} {current.name}</div>
+              {savedStreak !== null && (
+                <div style={{ marginTop: 12, fontSize: 14, color: "#475569" }}>
+                  Streak of <span style={{ color: "#60a5fa", fontWeight: 700 }}>{savedStreak}</span> saved to leaderboard ✓
+                </div>
+              )}
             </div>
           )}
         </div>
-
         {!reveal ? (
           <div style={{ display: "flex", gap: 12 }}>
             <input
@@ -91,7 +105,7 @@ export default function Mode3({ user, scores, updateMode3, onBack }) {
               autoFocus
               style={{
                 flex: 1, background: wrongFlash ? "#3f1515" : "#0f172a",
-                border: `2px solid ${wrongFlash ? "#EF4444" : phase === "correct" ? "#10B981" : "#1e293b"}`,
+                border: "2px solid " + (wrongFlash ? "#EF4444" : phase === "correct" ? "#10B981" : "#1e293b"),
                 borderRadius: 12, padding: "16px 20px", fontSize: 18, color: "#e2e8f0",
                 outline: "none", transition: "all 0.2s", fontFamily: "inherit",
               }}
@@ -108,13 +122,11 @@ export default function Mode3({ user, scores, updateMode3, onBack }) {
             fontSize: 16, fontFamily: "inherit", fontWeight: 700,
           }}>Continue (Streak Resets) →</button>
         )}
-
         {phase === "correct" && !reveal && (
           <div style={{ marginTop: 16, textAlign: "center", color: "#10B981", fontSize: 18, fontWeight: 700 }}>
             ✓ Correct! {streak > 4 && "🔥"} Streak: {streak}
           </div>
         )}
-
         {streakScores.length > 0 && (
           <div style={{ marginTop: 32, background: "#080f1e", border: "1px solid #1e293b", borderRadius: 16, padding: 24 }}>
             <div style={{ fontSize: 11, letterSpacing: 4, color: "#10B981", textTransform: "uppercase", marginBottom: 16 }}>🏅 Longest Streaks — Live Leaderboard</div>
