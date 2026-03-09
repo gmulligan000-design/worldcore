@@ -7,7 +7,7 @@ export default function ModePage({ user, onSelect, scores }) {
   const modes = [
     {
       id: 1, emoji: "🌍", title: "Countries of the World",
-      desc: "Name all 195 countries as fast as possible",
+      desc: "Name all 196 countries as fast as possible",
       stat: scores.mode1[user] ? `Best: ${fmtTime(scores.mode1[user])}` : "No record yet",
       color: "#3B82F6",
     },
