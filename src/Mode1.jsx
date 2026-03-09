@@ -163,9 +163,10 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
       </div>
       <div ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} style={{cursor:isDragging.current?"grabbing":"grab"}}>
         <svg viewBox="0 0 800 500" style={{width:"100%",display:"block"}}>
+          <defs><clipPath id="world-clip"><rect width="800" height="500"/></clipPath></defs>
           <rect width="800" height="500" fill="#0a1628"/>
           {!loaded&&<text x="400" y="250" textAnchor="middle" fill="#475569" fontSize="14">Loading map...</text>}
-          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
+          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`} clipPath="url(#world-clip)">
             {paths.map((p,i)=>{
               const ig=p.alpha3&&guessedCodes.includes(p.alpha3)
               const isWorld=p.alpha3&&COUNTRIES.some(c=>CODE2TO3[c.code]===p.alpha3)

@@ -147,9 +147,10 @@ function DuelMap({ highlightCode }) {
       </div>
       <div ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} style={{cursor:isDragging.current?"grabbing":"grab"}}>
         <svg viewBox="0 0 800 500" style={{width:"100%",display:"block"}}>
+          <defs><clipPath id="world-clip"><rect width="800" height="500"/></clipPath></defs>
           <rect width="800" height="500" fill="#0a1628"/>
           {!loaded&&<text x="400" y="250" textAnchor="middle" fill="#475569" fontSize="14">Loading map...</text>}
-          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
+          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`} clipPath="url(#world-clip)">
             {paths.map((p,i)=>{
               const isTarget = p.alpha3 && p.alpha3 === highlightAlpha3
               const isTiny = p.alpha2 && TINY_A2.has(p.alpha2) && isTarget
