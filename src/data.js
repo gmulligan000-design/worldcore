@@ -71,7 +71,7 @@ export const COUNTRIES = [
   { name: "Guinea-Bissau", code: "GW", pop: 2000000, export: "Cashews", flag: "🇬🇼", cont: "Africa", famous: "Amilcar Cabral" },
   { name: "Guyana", code: "GY", pop: 787000, export: "Petroleum", flag: "🇬🇾", cont: "South America", famous: "Walter Rodney" },
   { name: "Haiti", code: "HT", pop: 11400000, export: "Apparel", flag: "🇭🇹", cont: "North America", famous: "Toussaint Louverture" },
-  { name: "Holy See", code: "VA", pop: 800, export: "Cultural Services", flag: "🇻🇦", cont: "Europe", famous: "Pope Francis" },
+  { name: "Vatican City", code: "VA", pop: 800, export: "Cultural Services", flag: "🇻🇦", cont: "Europe", famous: "Pope Francis" },
   { name: "Honduras", code: "HN", pop: 10300000, export: "Coffee", flag: "🇭🇳", cont: "North America", famous: "Berta Caceres" },
   { name: "Hungary", code: "HU", pop: 9700000, export: "Machinery", flag: "🇭🇺", cont: "Europe", famous: "Erno Rubik" },
   { name: "Iceland", code: "IS", pop: 373000, export: "Fish", flag: "🇮🇸", cont: "Europe", famous: "Bjork" },
