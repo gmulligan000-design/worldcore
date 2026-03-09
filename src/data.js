@@ -219,7 +219,7 @@ export const COUNTRY_ALIASES = {
   "st lucia": "Saint Lucia",
   "sao tome": "Sao Tome and Principe",
   "antigua": "Antigua and Barbuda",
-  "holy see": "Holy See", "vatican": "Holy See", "vatican city": "Holy See",
+  "holy see": "Vatican City", "vatican": "Vatican City", "vatican city": "Vatican City",
   "palestine": "State of Palestine", "west bank": "State of Palestine",
   "guinea bissau": "Guinea-Bissau",
 }
