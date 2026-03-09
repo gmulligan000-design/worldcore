@@ -65,6 +65,13 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
   const foundCodes = Array.from(found).map(n => COUNTRIES.find(c => c.name === n)?.code).filter(Boolean)
   const targetCodes = targets.map(c => c.code)
 
+  // Best score for current letter across all users
+  const letterBest = Object.entries(scores.mode2)
+    .map(([uid, lmap]) => ({ uid, t: (lmap || {})[letter] }))
+    .filter(x => x.t !== undefined)
+    .sort((a, b) => a.t - b.t)[0] || null
+
+  // All scores for current letter (for leaderboard below)
   const letterScores = Object.entries(scores.mode2)
     .map(([uid, lmap]) => ({ uid, t: (lmap || {})[letter] }))
     .filter(x => x.t !== undefined)
@@ -81,6 +88,7 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
         </div>
 
         <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
+          {/* Letter display */}
           <div style={{
             background: "linear-gradient(135deg,#1e0f3f,#0f1a3f)",
             border: "2px solid #8B5CF6", borderRadius: 20,
@@ -92,9 +100,38 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
           </div>
 
           <div style={{ flex: 1, minWidth: 200 }}>
+
+            {/* Record to beat — shown above the timer */}
+            {letterBest ? (
+              <div style={{
+                background: "linear-gradient(135deg,#1a0f3f,#0f172a)",
+                border: "1px solid #8B5CF6",
+                borderRadius: 12, padding: "12px 16px", marginBottom: 12,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#8B5CF6", textTransform: "uppercase" }}>Record to beat — {letter}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#a78bfa", marginTop: 2 }}>{fmtTime(letterBest.t)}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 10, letterSpacing: 2, color: "#475569", textTransform: "uppercase" }}>Held by</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: letterBest.uid === user ? "#34d399" : "#e2e8f0" }}>{letterBest.uid}</div>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                background: "#0f172a", border: "1px dashed #1e293b",
+                borderRadius: 12, padding: "12px 16px", marginBottom: 12,
+                textAlign: "center",
+              }}>
+                <div style={{ fontSize: 12, color: "#334155", letterSpacing: 2 }}>NO RECORD FOR {letter} YET — BE THE FIRST!</div>
+              </div>
+            )}
+
+            {/* Timer + new letter button */}
             <div style={{ display: "flex", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
               <div style={{ background: "#0f172a", border: "1px solid #1e293b", borderRadius: 10, padding: "12px 20px", textAlign: "center" }}>
-                <div style={{ fontSize: 24, fontWeight: 900, color: "#e2e8f0" }}>{fmtTime(time)}</div>
+                <div style={{ fontSize: 24, fontWeight: 900, color: time > 0 && letterBest && time > letterBest.t ? "#EF4444" : "#e2e8f0" }}>{fmtTime(time)}</div>
                 <div style={{ fontSize: 10, color: "#475569", letterSpacing: 2 }}>TIME</div>
               </div>
               <button onClick={pickLetter} style={{
@@ -102,9 +139,13 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
                 padding: "12px 20px", borderRadius: 10, cursor: "pointer", fontSize: 13, fontFamily: "inherit",
               }}>🎲 New Letter</button>
             </div>
+
+            {/* Progress bar */}
             <div style={{ height: 4, background: "#1e293b", borderRadius: 4, marginBottom: 16, overflow: "hidden" }}>
               <div style={{ height: "100%", background: "linear-gradient(90deg,#8B5CF6,#EC4899)", width: `${(found.size / Math.max(targets.length, 1)) * 100}%`, transition: "width 0.5s" }} />
             </div>
+
+            {/* Input */}
             <div style={{ position: "relative" }}>
               <input
                 value={input} onChange={handleInput} onKeyDown={handleKey}
@@ -131,7 +172,10 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
           <div style={{ marginTop: 16, background: "linear-gradient(135deg,#1e0f3f,#0f172a)", border: "1px solid #8B5CF6", borderRadius: 16, padding: 24, textAlign: "center" }}>
             <div style={{ fontSize: 40 }}>🎯</div>
             <div style={{ fontSize: 28, fontWeight: 900, color: "#a78bfa" }}>Letter {letter} Complete!</div>
-            <div style={{ fontSize: 18, color: "#e2e8f0", marginTop: 4 }}>Time: {fmtTime(time)}</div>
+            <div style={{ fontSize: 18, color: "#e2e8f0", marginTop: 4 }}>Time: {fmtTime(timeRef.current)}</div>
+            {letterBest && timeRef.current < letterBest.t && (
+              <div style={{ fontSize: 14, color: "#34d399", marginTop: 8 }}>🏆 New record!</div>
+            )}
           </div>
         )}
 
