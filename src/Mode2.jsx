@@ -155,11 +155,10 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
         <button onClick={()=>{targetZoom.current=Math.max(1,targetZoom.current*0.75);startAnim()}} style={{background:"rgba(10,22,40,0.95)",border:"1px solid #1e3a5f",color:"#e2e8f0",width:32,height:32,borderRadius:7,cursor:"pointer",fontSize:18,lineHeight:1}}>−</button>
       </div>
       <div ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} style={{cursor:isDragging.current?"grabbing":"grab"}}>
-        <svg viewBox="0 0 800 500" style={{width:"100%",display:"block"}}>
-          <defs><clipPath id="world-clip"><rect width="800" height="500"/></clipPath></defs>
+        <svg viewBox="0 0 800 500" style={{width:"100%",display:"block",overflow:"hidden"}}>
           <rect width="800" height="500" fill="#0a1628"/>
           {!loaded&&<text x="400" y="250" textAnchor="middle" fill="#475569" fontSize="14">Loading map...</text>}
-          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`} clipPath="url(#world-clip)">
+          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
             {paths.map((p,i)=>{
               const ig = p.alpha3 && guessedCodes.includes(p.alpha3)
               const it = p.alpha3 && targetCodes.includes(p.alpha3)
