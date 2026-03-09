@@ -19,6 +19,15 @@ const TINY_CENTERS = {
 
 const allAlpha2s = COUNTRIES.map(c => c.code)
 
+const CONTINENTS = [
+  { name: "Africa",        emoji: "🌍", color: "#F59E0B" },
+  { name: "Asia",          emoji: "🌏", color: "#3B82F6" },
+  { name: "Europe",        emoji: "🌍", color: "#8B5CF6" },
+  { name: "North America", emoji: "🌎", color: "#10B981" },
+  { name: "South America", emoji: "🌎", color: "#EF4444" },
+  { name: "Oceania",       emoji: "🌏", color: "#06B6D4" },
+]
+
 function WorldMap({ guessedCodes, guessedAlpha2s }) {
   const [paths, setPaths] = useState([])
   const [loaded, setLoaded] = useState(false)
@@ -113,9 +122,9 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
     return d
   }
 
-  // Tiny pins for all tiny countries — blue if not guessed, green if guessed
   const tinyPins = []
   if (loaded) {
+    let pinNum = 1
     for (const a2 of allAlpha2s) {
       if (!TINY_A2.has(a2)) continue
       const center = TINY_CENTERS[a2]
@@ -124,7 +133,7 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
       const a3 = CODE2TO3[a2]
       const isGuessed = a3 && guessedCodes.includes(a3)
       const color = isGuessed ? "#10B981" : "#3B82F6"
-      tinyPins.push({ x, y, a2, a3, color, isGuessed })
+      tinyPins.push({ x, y, a2, a3, color, isGuessed, num: pinNum++ })
     }
   }
 
@@ -153,7 +162,7 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
                 stroke={ig?"#059669":isWorld?"#2563eb":"#0f2240"}
                 strokeWidth={sw} strokeLinejoin="round"/>
             })}
-            {tinyPins.map((pin,i)=>{
+            {tinyPins.map((pin)=>{
               const r=Math.max(4,7/zoom)
               const lineLen=Math.max(12,22/zoom)
               const fontSize=Math.max(5,9/zoom)
@@ -163,19 +172,14 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
                   <circle cx={pin.x} cy={pin.y} r={pulse?r*1.8:r*1.3} fill={pin.color} opacity={pulse?0.25:0.12}/>
                   <circle cx={pin.x} cy={pin.y} r={r} fill={pin.color} stroke="#fff" strokeWidth={Math.max(0.5,1.2/zoom)}/>
                   <line x1={pin.x} y1={pin.y-r} x2={pin.x} y2={pin.y-r-lineLen} stroke={pin.color} strokeWidth={Math.max(0.5,1.2/zoom)}/>
-                  <rect x={pin.x-fontSize*2.2} y={pin.y-r-lineLen-fontSize*1.6} width={fontSize*4.4} height={fontSize*1.6} rx={fontSize*0.4} fill={pin.color} opacity={0.9}/>
-                  <text x={pin.x} y={pin.y-r-lineLen-fontSize*0.3} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold">{i+1}</text>
+                  <rect x={pin.x-fontSize*1.4} y={pin.y-r-lineLen-fontSize*1.6} width={fontSize*2.8} height={fontSize*1.6} rx={fontSize*0.4} fill={pin.color} opacity={0.9}/>
+                  <text x={pin.x} y={pin.y-r-lineLen-fontSize*0.3} textAnchor="middle" fill="#fff" fontSize={fontSize} fontWeight="bold">{pin.num}</text>
                 </g>
               )
             })}
           </g>
         </svg>
       </div>
-      {tinyPins.length>0&&zoom<2&&(
-        <div style={{position:"absolute",bottom:8,left:10,background:"rgba(10,22,40,0.9)",border:"1px solid #1e3a5f",borderRadius:8,padding:"5px 10px",fontSize:11,color:"#60a5fa"}}>
-          💡 Zoom in to see small countries
-        </div>
-      )}
     </div>
   )
 }
@@ -199,6 +203,14 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
   const timerColor = recordTime
     ? time>=recordTime-10?(Math.floor(time)%2===0?"#EF4444":"#ff6b6b"):time>=recordTime-15?"#EF4444":time>=recordTime-30?"#F59E0B":"#e2e8f0"
     : "#e2e8f0"
+
+  // Continent breakdown
+  const continentStats = CONTINENTS.map(cont => {
+    const total = COUNTRIES.filter(c => c.cont === cont.name).length
+    const done = COUNTRIES.filter(c => c.cont === cont.name && guessed.includes(c.name)).length
+    const remaining = total - done
+    return { ...cont, total, done, remaining }
+  })
 
   useEffect(() => {
     if(running&&!done){timerRef.current=setInterval(()=>setTime(t=>t+1),1000)}
@@ -238,6 +250,25 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
           <div style={{fontSize:11,color:"#475569"}}>Scroll or +/− to zoom · drag to pan</div>
         </div>
 
+        {/* Continent tracker */}
+        {started && (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:8}}>
+            {continentStats.map(cont => (
+              <div key={cont.name} style={{background:"#080f1e",border:`1px solid ${cont.remaining===0?"#10B981":"#1e293b"}`,borderRadius:10,padding:"8px 12px",display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:16}}>{cont.emoji}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:10,color:"#475569",letterSpacing:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{cont.name.toUpperCase()}</div>
+                  <div style={{fontSize:13,fontWeight:700,color:cont.remaining===0?"#10B981":cont.color}}>
+                    {cont.remaining===0?"✓ Done":`${cont.remaining} left`}
+                  </div>
+                </div>
+                <div style={{fontSize:11,color:"#475569"}}>{cont.done}/{cont.total}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Record + Timer bar */}
         {started&&!done&&(
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,padding:"10px 16px",background:"#080f1e",borderRadius:10,border:"1px solid #1e293b"}}>
             <div>
