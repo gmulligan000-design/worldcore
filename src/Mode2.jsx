@@ -110,22 +110,21 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
     let d=""
     for(const poly of polys){
       for(const ring of poly){
-        // split ring into segments at antimeridian crossings
+        const pts=ring.map(([lo,la])=>{
+          const clo=Math.max(-179.9,Math.min(179.9,lo))
+          const cla=Math.max(-89,Math.min(89,la))
+          return [(clo+180)*(800/360),(90-cla)*(500/180)]
+        })
         const segs=[[]]
-        for(let i=0;i<ring.length;i++){
-          if(i>0&&Math.abs(ring[i][0]-ring[i-1][0])>180)segs.push([])
-          segs[segs.length-1].push(ring[i])
+        for(let i=0;i<pts.length;i++){
+          if(i>0&&Math.abs(pts[i][0]-pts[i-1][0])>400)segs.push([])
+          segs[segs.length-1].push(pts[i])
         }
         for(const seg of segs){
           if(seg.length<2)continue
           for(let i=0;i<seg.length;i++){
-            const lo=Math.max(-179.9,Math.min(179.9,seg[i][0]))
-            const la=Math.max(-89,Math.min(89,seg[i][1]))
-            const x=(lo+180)*(800/360)
-            const y=(90-la)*(500/180)
-            d+=(i===0?"M":"L")+x.toFixed(1)+","+y.toFixed(1)
+            d+=(i===0?"M":"L")+seg[i][0].toFixed(1)+","+seg[i][1].toFixed(1)
           }
-          // only close if single segment (no antimeridian split)
           if(segs.length===1)d+="Z"
         }
       }
