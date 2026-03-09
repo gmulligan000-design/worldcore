@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 
 export function useScores() {
-  const [scores, setScores] = useState({ mode1: {}, mode2: {}, mode2holders: {}, mode2userscores: {}, mode3: {}, mode4: {} })
+  const [scores, setScores] = useState({ mode1: {}, mode2: {}, mode2holders: {}, mode2userscores: {}, mode3: {}, mode4: {}, mode5duels: [] })
   const [loading, setLoading] = useState(true)
 
   const fetchScores = async () => {
@@ -34,7 +34,8 @@ export function useScores() {
       }
     })
 
-    setScores({ mode1, mode2, mode2holders, mode2userscores, mode3, mode4 })
+    const { data: duels } = await supabase.from('duels').select('*').order('created_at', { ascending: false })
+    setScores({ mode1, mode2, mode2holders, mode2userscores, mode3, mode4, mode5duels: duels || [] })
     setLoading(false)
   }
 
@@ -42,6 +43,7 @@ export function useScores() {
     fetchScores()
     const sub = supabase.channel('scores-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'scores' }, fetchScores)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'duels' }, fetchScores)
       .subscribe()
     return () => supabase.removeChannel(sub)
   }, [])
@@ -74,5 +76,24 @@ export function useScores() {
     fetchScores()
   }
 
-  return { scores, loading, updateMode1, updateMode2, updateMode3, updateMode4 }
+  const updateMode5 = async (action, payload) => {
+    if (action === 'send') {
+      await supabase.from('duels').insert({ challenger: payload.challenger, target: payload.target, country: payload.country, country_code: payload.country_code, status: 'pending' })
+    }
+    if (action === 'respond') {
+      await supabase.from('duels').update({ status: payload.success ? 'pending_counter' : 'target_lost', target_result: payload.success ? 'survived' : 'failed' }).eq('id', payload.id)
+    }
+    if (action === 'counter') {
+      await supabase.from('duels').update({ counter_country: payload.country, counter_code: payload.country_code, status: 'pending_challenger' }).eq('id', payload.id)
+    }
+    if (action === 'resolve') {
+      await supabase.from('duels').update({ status: payload.success ? 'pending' : 'challenger_lost', challenger_result: payload.success ? 'survived' : 'failed' }).eq('id', payload.id)
+      if (payload.success && payload.newCountry) {
+        await supabase.from('duels').update({ country: payload.newCountry, country_code: payload.newCode, counter_country: null, counter_code: null, status: 'pending' }).eq('id', payload.id)
+      }
+    }
+    fetchScores()
+  }
+
+  return { scores, loading, updateMode1, updateMode2, updateMode3, updateMode4, updateMode5 }
 }
