@@ -113,7 +113,7 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
         let px=null,py=null,started=false
         for(let i=0;i<ring.length;i++){
           const lo=Math.max(-179.9,Math.min(179.9,ring[i][0]))
-          const la=Math.max(-89.9,Math.min(89.9,ring[i][1]))
+          const la=Math.max(-60,Math.min(75,ring[i][1]))
           const x=(lo+180)*(800/360)
           const y=Math.max(0,Math.min(500,(90-la)*(500/180)))
           if(px!==null&&(Math.abs(x-px)>200||Math.abs(y-py)>200)){
@@ -158,7 +158,7 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
       </div>
       <div ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} style={{cursor:isDragging.current?"grabbing":"grab"}}>
         <svg viewBox="0 0 800 500" style={{width:"100%",display:"block",overflow:"hidden"}}>
-          <rect width="800" height="500" fill="#0a1628"/>
+          <rect width="800" height="500" fill="#0a1628" stroke="none"/><rect width="800" height="500" fill="none" stroke="none"/>
           {!loaded&&<text x="400" y="250" textAnchor="middle" fill="#475569" fontSize="14">Loading map...</text>}
           <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
             {paths.map((p,i)=>{
