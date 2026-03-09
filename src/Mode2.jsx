@@ -81,7 +81,7 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
     } else { setShake(true); setTimeout(()=>setShake(false),500); setInput("") }
   }
 
-  const giveUp = () => { setRunning(false); setDone(true); updateMode2(user, letter, time) }
+  const giveUp = () => { setRunning(false); setDone(true) }
   const targetCodes = lc.map(c=>CODE2TO3[c.code]).filter(Boolean)
   const guessedCodes = guessed.map(name=>{const c=COUNTRIES.find(x=>x.name===name);return c?CODE2TO3[c.code]:null}).filter(Boolean)
 
@@ -123,10 +123,22 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
           <button onClick={onBack} style={{background:"none",border:"1px solid #1e293b",color:"#475569",padding:"8px 16px",borderRadius:8,cursor:"pointer",fontSize:13}}>← Back</button>
           <div style={{fontSize:36,fontWeight:900,color:"#e2e8f0"}}>{letter}</div>
           <div style={{fontSize:13,color:"#475569"}}>{lc.length} countries</div>
+
+          {record ? (
+            <div style={{marginLeft:12,padding:"6px 14px",background:"#0f172a",border:"1px solid #1e3a5f",borderRadius:10,display:"flex",gap:10,alignItems:"center"}}>
+              <span style={{fontSize:11,color:"#475569",letterSpacing:1}}>RECORD</span>
+              <span style={{fontSize:14,fontWeight:900,color:"#F59E0B"}}>👑 {holder}</span>
+              <span style={{fontSize:14,fontWeight:700,color:"#e2e8f0"}}>{fmtTime(record)}</span>
+            </div>
+          ) : (
+            <div style={{marginLeft:12,padding:"6px 14px",background:"#0f172a",border:"1px solid #1e293b",borderRadius:10}}>
+              <span style={{fontSize:11,color:"#475569"}}>No record yet for {letter}</span>
+            </div>
+          )}
+
           <button onClick={()=>setView("leaderboard")} style={{marginLeft:"auto",background:"#0f172a",border:"1px solid #1e3a5f",color:"#60a5fa",padding:"8px 14px",borderRadius:8,cursor:"pointer",fontSize:12}}>🏅 All Records</button>
           <div style={{textAlign:"right"}}>
             <div style={{fontSize:28,fontWeight:900,color:done?"#10B981":record&&time>record?"#EF4444":"#e2e8f0"}}>{fmtTime(time)}</div>
-            {record&&<div style={{fontSize:10,color:"#475569"}}>Record: {fmtTime(record)} — {holder}</div>}
           </div>
         </div>
 
@@ -148,7 +160,7 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
         ):(
           <div style={{marginBottom:20,padding:20,background:"#0f2a1e",border:"2px solid #10B981",borderRadius:16,textAlign:"center"}}>
             <div style={{fontSize:24,fontWeight:900,color:"#10B981"}}>{guessed.length===lc.length?"✓ Complete!":guessed.length+"/"+lc.length+" named"}</div>
-            <div style={{fontSize:18,color:"#e2e8f0",marginTop:4}}>Time: {fmtTime(time)}</div>
+            {guessed.length===lc.length&&<div style={{fontSize:18,color:"#e2e8f0",marginTop:4}}>Time: {fmtTime(time)}</div>}
             <button onClick={startNew} style={{marginTop:12,background:"#1e3a5f",border:"none",color:"#60a5fa",padding:"12px 24px",borderRadius:10,cursor:"pointer",fontSize:15,fontFamily:"inherit"}}>New Random Letter →</button>
           </div>
         )}
