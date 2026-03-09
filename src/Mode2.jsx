@@ -109,13 +109,28 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
     const polys=geo.type==="Polygon"?[geo.coordinates]:geo.type==="MultiPolygon"?geo.coordinates:[]
     let d=""
     for(const poly of polys)for(const ring of poly){
-      let first=true
-      for(const[lo,la]of ring){
-        const clo=Math.max(-179.9,Math.min(179.9,lo))
-        const[x,y]=proj(clo,la)
-        d+=(first?"M":"L")+x.toFixed(1)+","+y.toFixed(1); first=false
+      // Split ring at antimeridian to prevent streaks
+      const segments=[[]]
+      for(let i=0;i<ring.length;i++){
+        const [lo,la]=ring[i]
+        if(i>0){
+          const prevLo=ring[i-1][0]
+          if(Math.abs(lo-prevLo)>180){
+            segments.push([])
+          }
+        }
+        segments[segments.length-1].push([lo,la])
       }
-      d+="Z"
+      for(const seg of segments){
+        if(seg.length<2)continue
+        let first=true
+        for(const[lo,la]of seg){
+          const clo=Math.max(-179.9,Math.min(179.9,lo))
+          const[x,y]=proj(clo,la)
+          d+=(first?"M":"L")+x.toFixed(1)+","+y.toFixed(1); first=false
+        }
+        d+="Z"
+      }
     }
     return d
   }
