@@ -184,6 +184,16 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
   )
 }
 
+
+const CONTINENTS = [
+  { name: "Africa",        short: "Africa",    emoji: "🌍", color: "#F59E0B" },
+  { name: "Asia",          short: "Asia",      emoji: "🌏", color: "#3B82F6" },
+  { name: "Europe",        short: "Europe",    emoji: "🌍", color: "#8B5CF6" },
+  { name: "North America", short: "N.America", emoji: "🌎", color: "#10B981" },
+  { name: "South America", short: "S.America", emoji: "🌎", color: "#EF4444" },
+  { name: "Oceania",       short: "Oceania",   emoji: "🌏", color: "#06B6D4" },
+]
+
 export default function Mode1({ user, scores, updateMode1, onBack }) {
   const [guessed, setGuessed] = useState([])
   const [input, setInput] = useState("")
@@ -210,6 +220,12 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
     const done = COUNTRIES.filter(c => c.cont === cont.name && guessed.includes(c.name)).length
     const remaining = total - done
     return { ...cont, total, done, remaining }
+  })
+
+  const continentStats = CONTINENTS.map(cont => {
+    const total = COUNTRIES.filter(c => c.cont === cont.name).length
+    const guessedCount = COUNTRIES.filter(c => c.cont === cont.name && guessed.includes(c.name)).length
+    return { ...cont, total, remaining: total - guessedCount }
   })
 
   useEffect(() => {
@@ -239,7 +255,7 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
         <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16}}>
           <button onClick={onBack} style={{background:"none",border:"1px solid #1e293b",color:"#475569",padding:"8px 16px",borderRadius:8,cursor:"pointer",fontSize:13}}>← Back</button>
           <h2 style={{color:"#e2e8f0",margin:0,fontSize:22,fontWeight:700}}>🌍 Countries of the World</h2>
-          <div style={{marginLeft:"auto",fontSize:13,color:"#e2e8f0",fontWeight:700}}>{guessed.length}/196</div>
+
         </div>
 
         <WorldMap guessedCodes={guessedCodes} guessedAlpha2s={guessedAlpha2s}/>
@@ -269,6 +285,17 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
         )}
 
         {/* Record + Timer bar */}
+        {started&&(
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
+            {continentStats.map(cont=>(
+              <div key={cont.name} style={{background:"#080f1e",border:`1px solid ${cont.remaining===0?"#10B981":"#1e293b"}`,borderRadius:10,padding:"8px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span style={{fontSize:13,color:cont.remaining===0?"#10B981":cont.color,fontWeight:600}}>{cont.short}</span>
+                <span style={{fontSize:15,fontWeight:900,color:cont.remaining===0?"#10B981":"#e2e8f0"}}>{cont.remaining===0?"✓":cont.remaining}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {started&&!done&&(
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,padding:"10px 16px",background:"#080f1e",borderRadius:10,border:"1px solid #1e293b"}}>
             <div>
@@ -280,7 +307,10 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
                 </div>
               ):<span style={{fontSize:12,color:"#475569"}}>No record yet — be first!</span>}
             </div>
-            <div style={{fontSize:32,fontWeight:900,color:timerColor,transition:"color 0.3s"}}>{fmtTime(time)}</div>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:2}}>
+              <div style={{fontSize:11,color:"#475569",letterSpacing:1}}>{guessed.length}/196</div>
+              <div style={{fontSize:32,fontWeight:900,color:timerColor,transition:"color 0.3s"}}>{fmtTime(time)}</div>
+            </div>
           </div>
         )}
 
