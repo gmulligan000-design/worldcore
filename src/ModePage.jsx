@@ -11,13 +11,6 @@ const GLOBE_FACTS = [
   "Brazil is the only Portuguese-speaking country in the Americas 🇧🇷",
 ]
 
-const MINI_MAPS = [
-  { path: "M 60,40 L 80,35 L 95,45 L 90,65 L 70,70 L 55,60 Z", label: "Europe", color: "#3B82F6" },
-  { path: "M 20,50 L 45,30 L 55,40 L 50,80 L 30,85 L 15,70 Z", label: "Americas", color: "#10B981" },
-  { path: "M 110,45 L 140,40 L 155,55 L 145,75 L 120,78 L 108,62 Z", label: "Asia", color: "#F59E0B" },
-  { path: "M 70,80 L 90,75 L 100,90 L 88,108 L 68,105 L 62,90 Z", label: "Africa", color: "#EF4444" },
-]
-
 function FloatingGlobe({ x, y, size, opacity, speed }) {
   const [pos, setPos] = useState({ x, y })
   useEffect(() => {
@@ -43,6 +36,14 @@ export default function ModePage({ user, scores, onSelect }) {
     const interval = setInterval(() => setFactIdx(i => (i + 1) % GLOBE_FACTS.length), 3500)
     return () => clearInterval(interval)
   }, [])
+
+  const mode4BestContinent = () => {
+    const userScores = scores.mode4?.[user] || {}
+    const count = Object.keys(userScores).length
+    if (count === 0) return "No records yet"
+    const best = Object.entries(userScores).sort(([,a],[,b])=>a-b)[0]
+    return `${best[0]}: ${Math.floor(best[1]/60)}m ${best[1]%60}s`
+  }
 
   const modes = [
     {
@@ -81,6 +82,18 @@ export default function ModePage({ user, scores, onSelect }) {
       bg: "linear-gradient(135deg, #0a1f18 0%, #0f172a 100%)",
       pattern: "🏴",
     },
+    {
+      id: 4,
+      icon: "🌐",
+      title: "Continental Mastery",
+      desc: "Pick a continent and name every country in it",
+      color: "#F59E0B",
+      glow: "rgba(245,158,11,0.3)",
+      stat: mode4BestContinent(),
+      statColor: scores.mode4?.[user] && Object.keys(scores.mode4[user]).length > 0 ? "#F59E0B" : "#475569",
+      bg: "linear-gradient(135deg, #1a140a 0%, #0f172a 100%)",
+      pattern: "🗺️",
+    },
   ]
 
   const topMode1 = Object.entries(scores.mode1 || {}).sort(([,a],[,b])=>a-b)[0]
@@ -88,8 +101,6 @@ export default function ModePage({ user, scores, onSelect }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "#030711", fontFamily: "'Georgia', serif", overflow: "hidden", position: "relative" }}>
-
-      {/* Floating background globes */}
       <FloatingGlobe x={5} y={10} size="2rem" opacity={0.06} speed={0.008} />
       <FloatingGlobe x={85} y={15} size="3rem" opacity={0.05} speed={0.006} />
       <FloatingGlobe x={15} y={70} size="1.5rem" opacity={0.07} speed={0.01} />
@@ -97,7 +108,6 @@ export default function ModePage({ user, scores, onSelect }) {
       <FloatingGlobe x={50} y={85} size="2rem" opacity={0.06} speed={0.009} />
       <FloatingGlobe x={90} y={80} size="1.5rem" opacity={0.08} speed={0.011} />
 
-      {/* Background grid lines */}
       <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.04, pointerEvents: "none" }}>
         {Array.from({length: 18}, (_,i) => (
           <line key={"v"+i} x1={`${(i/17)*100}%`} y1="0" x2={`${(i/17)*100}%`} y2="100%" stroke="#3B82F6" strokeWidth="1"/>
@@ -110,22 +120,17 @@ export default function ModePage({ user, scores, onSelect }) {
       </svg>
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "32px 20px", position: "relative", zIndex: 1 }}>
-
-        {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontSize: 11, letterSpacing: 6, color: "#3B82F6", marginBottom: 8, textTransform: "uppercase" }}>Mission Control</div>
           <h1 style={{ fontSize: 48, fontWeight: 900, color: "#e2e8f0", margin: "0 0 4px", letterSpacing: -1 }}>
             World<span style={{ color: "#3B82F6" }}>Core</span>
           </h1>
           <div style={{ fontSize: 13, color: "#475569", marginBottom: 16 }}>Playing as <span style={{ color: "#60a5fa", fontWeight: 700 }}>{user}</span></div>
-
-          {/* Rotating fact */}
           <div style={{ background: "#080f1e", border: "1px solid #1e3a5f", borderRadius: 12, padding: "10px 20px", display: "inline-block", fontSize: 13, color: "#60a5fa", fontStyle: "italic" }}>
             💡 {GLOBE_FACTS[factIdx]}
           </div>
         </div>
 
-        {/* Quick stats bar */}
         {(topMode1 || topMode3) && (
           <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
             {topMode1 && (
@@ -145,37 +150,13 @@ export default function ModePage({ user, scores, onSelect }) {
           </div>
         )}
 
-        {/* Mode cards */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {modes.map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => onSelect(mode.id)}
-              onMouseEnter={() => setHovered(mode.id)}
-              onMouseLeave={() => setHovered(null)}
-              style={{
-                background: hovered === mode.id ? mode.bg : "#080f1e",
-                border: `2px solid ${hovered === mode.id ? mode.color : "#1e293b"}`,
-                borderRadius: 20,
-                padding: "22px 24px",
-                cursor: "pointer",
-                textAlign: "left",
-                transition: "all 0.25s ease",
-                boxShadow: hovered === mode.id ? `0 0 30px ${mode.glow}` : "none",
-                transform: hovered === mode.id ? "translateY(-2px)" : "none",
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              {/* Background pattern */}
-              <div style={{ position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)", fontSize: 60, opacity: 0.06, pointerEvents: "none" }}>
-                {mode.pattern}
-              </div>
-
+            <button key={mode.id} onClick={() => onSelect(mode.id)} onMouseEnter={() => setHovered(mode.id)} onMouseLeave={() => setHovered(null)}
+              style={{ background: hovered === mode.id ? mode.bg : "#080f1e", border: `2px solid ${hovered === mode.id ? mode.color : "#1e293b"}`, borderRadius: 20, padding: "22px 24px", cursor: "pointer", textAlign: "left", transition: "all 0.25s ease", boxShadow: hovered === mode.id ? `0 0 30px ${mode.glow}` : "none", transform: hovered === mode.id ? "translateY(-2px)" : "none", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", right: 20, top: "50%", transform: "translateY(-50%)", fontSize: 60, opacity: 0.06, pointerEvents: "none" }}>{mode.pattern}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: `${mode.color}22`, border: `2px solid ${mode.color}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>
-                  {mode.icon}
-                </div>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: `${mode.color}22`, border: `2px solid ${mode.color}44`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>{mode.icon}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>{mode.title}</div>
                   <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.4 }}>{mode.desc}</div>
@@ -189,27 +170,18 @@ export default function ModePage({ user, scores, onSelect }) {
           ))}
         </div>
 
-        {/* Continent mini-map decoration */}
         <div style={{ marginTop: 28, display: "flex", justifyContent: "center", gap: 16, opacity: 0.5 }}>
           {["🌍", "🌎", "🌏"].map((g, i) => (
-            <div key={i} style={{ fontSize: 28, animation: `float ${2.5 + i * 0.5}s ease-in-out infinite alternate`, filter: "grayscale(0.3)" }}>{g}</div>
+            <div key={i} style={{ fontSize: 28, animation: `float ${2.5 + i * 0.5}s ease-in-out infinite alternate` }}>{g}</div>
           ))}
         </div>
 
-        {/* Switch profile */}
         <div style={{ textAlign: "center", marginTop: 24 }}>
-          <button onClick={() => window.location.reload()} style={{ background: "none", border: "1px solid #1e293b", color: "#475569", padding: "10px 24px", borderRadius: 10, cursor: "pointer", fontSize: 12, letterSpacing: 2, fontFamily: "inherit" }}>
-            ← SWITCH PROFILE
-          </button>
+          <button onClick={() => window.location.reload()} style={{ background: "none", border: "1px solid #1e293b", color: "#475569", padding: "10px 24px", borderRadius: 10, cursor: "pointer", fontSize: 12, letterSpacing: 2, fontFamily: "inherit" }}>← SWITCH PROFILE</button>
         </div>
       </div>
 
-      <style>{`
-        @keyframes float {
-          from { transform: translateY(0px); }
-          to { transform: translateY(-8px); }
-        }
-      `}</style>
+      <style>{`@keyframes float { from { transform: translateY(0px); } to { transform: translateY(-8px); } }`}</style>
     </div>
   )
 }
