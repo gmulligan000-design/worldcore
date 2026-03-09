@@ -186,6 +186,16 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
   )
 }
 
+
+const CONTINENTS = [
+  { name: "Africa",        short: "Africa",    color: "#F59E0B" },
+  { name: "Asia",          short: "Asia",      color: "#3B82F6" },
+  { name: "Europe",        short: "Europe",    color: "#8B5CF6" },
+  { name: "North America", short: "N.America", color: "#10B981" },
+  { name: "South America", short: "S.America", color: "#EF4444" },
+  { name: "Oceania",       short: "Oceania",   color: "#06B6D4" },
+]
+
 export default function Mode2({ user, scores, updateMode2, onBack }) {
   const getLC = (l) => COUNTRIES.filter(c => c.name.startsWith(l))
   const [view, setView] = useState("playing")
@@ -237,6 +247,12 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
 
   const giveUp = () => finishRound(guessed, time, true)
   const skip = () => finishRound(guessed, time, true)
+
+  const continentStats = CONTINENTS.map(cont => {
+    const contCountries = lc.filter(c => c.cont === cont.name)
+    const guessedCount = contCountries.filter(c => guessed.includes(c.name)).length
+    return { ...cont, total: contCountries.length, remaining: contCountries.length - guessedCount }
+  }).filter(c => c.total > 0)
 
   const missed = lc.filter(c => !guessed.includes(c.name))
   const targetCodes = lc.map(c => CODE2TO3[c.code]).filter(Boolean)
@@ -297,6 +313,18 @@ export default function Mode2({ user, scores, updateMode2, onBack }) {
             : <div style={{fontSize:12,color:"#EF4444"}}>■ Still needed</div>}
           <div style={{marginLeft:"auto",fontSize:13,color:"#e2e8f0",fontWeight:700}}>{guessed.length}/{lc.length}</div>
         </div>
+
+        {/* Continent tracker */}
+        {continentStats.length > 0 && (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6,marginBottom:8}}>
+            {continentStats.map(cont=>(
+              <div key={cont.name} style={{background:"#080f1e",border:`1px solid ${cont.remaining===0?"#10B981":"#1e293b"}`,borderRadius:10,padding:"8px 14px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <span style={{fontSize:13,color:cont.remaining===0?"#10B981":cont.color,fontWeight:600}}>{cont.short}</span>
+                <span style={{fontSize:15,fontWeight:900,color:cont.remaining===0?"#10B981":"#e2e8f0"}}>{cont.remaining===0?"✓":cont.remaining}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Record + Timer */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,padding:"10px 16px",background:"#080f1e",borderRadius:10,border:"1px solid #1e293b"}}>
