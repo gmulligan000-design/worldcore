@@ -53,7 +53,7 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
     const load = async () => {
       try {
         await new Promise((res,rej)=>{if(window.topojson){res();return}const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})
-        const r = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+        const r = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
         const topo = await r.json()
         if (cancelled) return
         const features = window.topojson.feature(topo, topo.objects.countries).features
@@ -162,7 +162,7 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
       <div ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} style={{cursor:isDragging.current?"grabbing":"grab"}}>
         <svg viewBox="0 0 800 500" overflow="hidden" style={{width:"100%",display:"block"}}>
           <defs><clipPath id="clip"><rect x="0" y="0" width="800" height="500"/></clipPath></defs>
-          <rect width="800" height="500" fill="#0a1628" stroke="none"/><rect width="800" height="500" fill="none" stroke="none"/>
+          <rect width="800" height="500" fill="#0a1628"/>
           {!loaded&&<text x="400" y="250" textAnchor="middle" fill="#475569" fontSize="14">Loading map...</text>}
           <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`} clipPath="url(#clip)">
             {paths.map((p,i)=>{
