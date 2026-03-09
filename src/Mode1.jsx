@@ -53,12 +53,12 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
     const load = async () => {
       try {
         await new Promise((res,rej)=>{if(window.topojson){res();return}const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})
-        const r = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json')
-        const topo = await r.json()
+        const r = await fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson')
+        const geojson = await r.json()
         if (cancelled) return
-        const features = window.topojson.feature(topo, topo.objects.countries).features
+        const features = geojson.features
         const nm = buildNumericMap()
-        setPaths(features.map(f => { const a2=nm[String(f.id).padStart(3,'0')]; return {alpha3:a2?CODE2TO3[a2]:null,alpha2:a2||null,geometry:f.geometry} }))
+        setPaths(features.map(f => { const a2=f.properties?.ISO_A2||f.properties?.iso_a2||null; return {alpha3:a2?CODE2TO3[a2]:null,alpha2:a2||null,geometry:f.geometry} }))
         setLoaded(true)
       } catch(e){setLoaded(true)}
     }
