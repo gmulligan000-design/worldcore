@@ -13,27 +13,67 @@ function WorldMap({ guessedCodes }) {
   const [loaded, setLoaded] = useState(false)
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [dragging, setDragging] = useState(false)
-  const dragStart = useRef(null)
+  const isDragging = useRef(false)
+  const lastPos = useRef({ x: 0, y: 0 })
   const containerRef = useRef(null)
+  const animRef = useRef(null)
+  const targetZoom = useRef(1)
+  const targetPan = useRef({ x: 0, y: 0 })
+  const currentZoom = useRef(1)
+  const currentPan = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
     let cancelled = false
     const load = async () => {
       try {
-        await new Promise((res, rej) => { if (window.topojson){res();return} const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s) })
+        await new Promise((res,rej)=>{if(window.topojson){res();return}const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})
         const r = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
         const topo = await r.json()
         if (cancelled) return
         const features = window.topojson.feature(topo, topo.objects.countries).features
         const nm = buildNumericMap()
-        setPaths(features.map(f => { const a2=nm[String(f.id).padStart(3,'0')]; return {alpha3:a2?CODE2TO3[a2]:null,geometry:f.geometry} }))
+        setPaths(features.map(f=>{const a2=nm[String(f.id).padStart(3,'0')];return{alpha3:a2?CODE2TO3[a2]:null,geometry:f.geometry}}))
         setLoaded(true)
       } catch(e){setLoaded(true)}
     }
     load()
     return()=>{cancelled=true}
   }, [])
+
+  const animate = () => {
+    const ease = 0.12
+    const dz = targetZoom.current - currentZoom.current
+    const dx = targetPan.current.x - currentPan.current.x
+    const dy = targetPan.current.y - currentPan.current.y
+    if (Math.abs(dz)>0.001||Math.abs(dx)>0.1||Math.abs(dy)>0.1) {
+      currentZoom.current += dz*ease
+      currentPan.current = {x:currentPan.current.x+dx*ease, y:currentPan.current.y+dy*ease}
+      setZoom(currentZoom.current); setPan({...currentPan.current})
+      animRef.current = requestAnimationFrame(animate)
+    }
+  }
+  const startAnim = () => { if(animRef.current) cancelAnimationFrame(animRef.current); animRef.current = requestAnimationFrame(animate) }
+
+  const handleWheel = (e) => {
+    e.preventDefault()
+    const rect = containerRef.current.getBoundingClientRect()
+    const mx=(e.clientX-rect.left)/rect.width*800
+    const my=(e.clientY-rect.top)/rect.height*400
+    const factor = e.deltaY<0?1.12:0.89
+    const nz = Math.min(10,Math.max(1,targetZoom.current*factor))
+    const scale = nz/targetZoom.current
+    targetPan.current={x:mx-scale*(mx-targetPan.current.x),y:my-scale*(my-targetPan.current.y)}
+    targetZoom.current=nz; startAnim()
+  }
+  const handleMouseDown=(e)=>{isDragging.current=true;lastPos.current={x:e.clientX,y:e.clientY}}
+  const handleMouseMove=(e)=>{
+    if(!isDragging.current)return
+    const dx=e.clientX-lastPos.current.x; const dy=e.clientY-lastPos.current.y
+    lastPos.current={x:e.clientX,y:e.clientY}
+    targetPan.current={x:targetPan.current.x+dx*(800/(containerRef.current?.clientWidth||800)),y:targetPan.current.y+dy*(400/(containerRef.current?.clientHeight||400))}
+    currentPan.current={...targetPan.current}; setPan({...targetPan.current})
+  }
+  const handleMouseUp=()=>{isDragging.current=false}
 
   const proj=(lon,lat)=>[(lon+180)*(800/360),(90-lat)*(380/180)+10]
   const toD=(geo)=>{
@@ -44,39 +84,23 @@ function WorldMap({ guessedCodes }) {
     return d
   }
 
-  const handleWheel = (e) => {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? 0.85 : 1.15
-    setZoom(z => Math.min(8, Math.max(1, z * delta)))
-  }
-
-  const handleMouseDown = (e) => { setDragging(true); dragStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y } }
-  const handleMouseMove = (e) => { if (!dragging||!dragStart.current) return; setPan({ x: e.clientX-dragStart.current.x, y: e.clientY-dragStart.current.y }) }
-  const handleMouseUp = () => setDragging(false)
-  const handleTouchStart = (e) => { if(e.touches.length===1){setDragging(true);dragStart.current={x:e.touches[0].clientX-pan.x,y:e.touches[0].clientY-pan.y}} }
-  const handleTouchMove = (e) => { if(!dragging||!dragStart.current||e.touches.length!==1)return; setPan({x:e.touches[0].clientX-dragStart.current.x,y:e.touches[0].clientY-dragStart.current.y}) }
-
-  const tx = pan.x * (800 / (containerRef.current?.clientWidth || 800))
-  const ty = pan.y * (400 / (containerRef.current?.clientHeight || 400))
-
   return (
-    <div style={{width:"100%",background:"#060d1a",borderRadius:12,overflow:"hidden",border:"1px solid #1e293b",position:"relative"}}>
+    <div style={{width:"100%",background:"#060d1a",borderRadius:12,overflow:"hidden",border:"1px solid #1e293b",position:"relative",userSelect:"none"}}>
       <div style={{position:"absolute",top:8,right:8,zIndex:10,display:"flex",gap:6}}>
-        <button onClick={()=>setZoom(z=>Math.min(8,z*1.3))} style={{background:"#0f172a",border:"1px solid #1e293b",color:"#e2e8f0",width:32,height:32,borderRadius:6,cursor:"pointer",fontSize:18,lineHeight:1}}>+</button>
-        <button onClick={()=>{setZoom(1);setPan({x:0,y:0})}} style={{background:"#0f172a",border:"1px solid #1e293b",color:"#475569",width:32,height:32,borderRadius:6,cursor:"pointer",fontSize:11}}>↺</button>
-        <button onClick={()=>setZoom(z=>Math.max(1,z*0.77))} style={{background:"#0f172a",border:"1px solid #1e293b",color:"#e2e8f0",width:32,height:32,borderRadius:6,cursor:"pointer",fontSize:18,lineHeight:1}}>−</button>
+        <button onClick={()=>{targetZoom.current=Math.min(10,targetZoom.current*1.3);startAnim()}} style={{background:"rgba(15,23,42,0.9)",border:"1px solid #1e293b",color:"#e2e8f0",width:30,height:30,borderRadius:6,cursor:"pointer",fontSize:16,lineHeight:1}}>+</button>
+        <button onClick={()=>{targetZoom.current=1;targetPan.current={x:0,y:0};startAnim()}} style={{background:"rgba(15,23,42,0.9)",border:"1px solid #1e293b",color:"#475569",width:30,height:30,borderRadius:6,cursor:"pointer",fontSize:11}}>↺</button>
+        <button onClick={()=>{targetZoom.current=Math.max(1,targetZoom.current*0.77);startAnim()}} style={{background:"rgba(15,23,42,0.9)",border:"1px solid #1e293b",color:"#e2e8f0",width:30,height:30,borderRadius:6,cursor:"pointer",fontSize:16,lineHeight:1}}>−</button>
       </div>
-      <div ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleMouseUp} style={{cursor:dragging?"grabbing":"grab"}}>
+      <div ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} style={{cursor:isDragging.current?"grabbing":"grab"}}>
         <svg viewBox="0 0 800 400" style={{width:"100%",display:"block"}}>
           <rect width="800" height="400" fill="#060d1a"/>
           {!loaded&&<text x="400" y="200" textAnchor="middle" fill="#475569" fontSize="14">Loading map...</text>}
-          <g transform={`translate(${tx + 400*(1-1/zoom) * (zoom>1?1:0)},${ty + 200*(1-1/zoom) * (zoom>1?1:0)}) scale(${zoom})`} style={{transformOrigin:"400px 200px"}}>
+          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
             {paths.map((p,i)=>{
               const ig=p.alpha3&&guessedCodes.includes(p.alpha3)
               const isWorld=p.alpha3&&allCodes.includes(p.alpha3)
-              const d=toD(p.geometry)
-              if(!d)return null
-              return <path key={i} d={d} fill={ig?"#10B981":isWorld?"#3B82F6":"#0a1628"} stroke="#060d1a" strokeWidth={0.5/zoom}/>
+              const d=toD(p.geometry); if(!d)return null
+              return <path key={i} d={d} fill={ig?"#10B981":isWorld?"#3B82F6":"#0a1628"} stroke={ig?"#059669":isWorld?"#2563eb":"#060d1a"} strokeWidth={Math.max(0.3,1/zoom)} opacity={1}/>
             })}
           </g>
         </svg>
@@ -98,6 +122,13 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
 
   const remaining = COUNTRIES.filter(c => !guessed.includes(c.name))
   const myBest = scores.mode1[user] || null
+  const record = Object.entries(scores.mode1).sort(([,a],[,b])=>a-b)[0] || null
+  const recordHolder = record?.[0] || null
+  const recordTime = record?.[1] || null
+
+  const timerColor = recordTime
+    ? time >= recordTime - 10 ? (Math.floor(time)%2===0?"#EF4444":"#ff6b6b") : time >= recordTime - 15 ? "#EF4444" : time >= recordTime - 30 ? "#F59E0B" : "#e2e8f0"
+    : "#e2e8f0"
 
   useEffect(() => {
     if (running && !done) { timerRef.current = setInterval(() => setTime(t => t+1), 1000) }
@@ -106,16 +137,20 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
 
   const start = () => { setStarted(true); setRunning(true); setGuessed([]); setTime(0); setDone(false); setTimeout(()=>inputRef.current?.focus(),100) }
 
-  const handleGuess = () => {
-    const val = input.trim(); if (!val) return
-    const resolved = resolveCountry(val)
+  const handleInput = (val) => {
+    setInput(val)
+    const resolved = resolveCountry(val.trim())
     if (resolved && !guessed.includes(resolved)) {
       const ng = [...guessed, resolved]; setGuessed(ng); setInput("")
       if (ng.length === COUNTRIES.length) { setRunning(false); setDone(true); updateMode1(user, time+1) }
-    } else { setShake(true); setTimeout(()=>setShake(false),400); setInput("") }
+    } else if (val.endsWith(" ") && val.trim().length > 1) {
+      setShake(true); setTimeout(()=>setShake(false),400)
+    }
   }
 
-  const guessedCodes = guessed.map(name => { const c=COUNTRIES.find(x=>x.name===name); return c?CODE2TO3[c.code]:null }).filter(Boolean)
+  const giveUp = () => { setRunning(false); setDone(true) }
+
+  const guessedCodes = guessed.map(name=>{const c=COUNTRIES.find(x=>x.name===name);return c?CODE2TO3[c.code]:null}).filter(Boolean)
   const leaderboard = Object.entries(scores.mode1).sort(([,a],[,b])=>a-b)
 
   return (
@@ -124,20 +159,31 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
         <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:20}}>
           <button onClick={onBack} style={{background:"none",border:"1px solid #1e293b",color:"#475569",padding:"8px 16px",borderRadius:8,cursor:"pointer",fontSize:13}}>← Back</button>
           <h2 style={{color:"#e2e8f0",margin:0,fontSize:22,fontWeight:700}}>🌍 Countries of the World</h2>
-          <div style={{marginLeft:"auto",textAlign:"right"}}>
-            <div style={{fontSize:28,fontWeight:900,color:done?"#10B981":"#e2e8f0"}}>{fmtTime(time)}</div>
-            {myBest&&<div style={{fontSize:11,color:"#475569"}}>Your best: {fmtTime(myBest)}</div>}
-          </div>
+          <div style={{marginLeft:"auto",fontSize:13,color:"#e2e8f0",fontWeight:700}}>{guessed.length}/196</div>
         </div>
 
         <WorldMap guessedCodes={guessedCodes}/>
 
-        <div style={{marginTop:10,marginBottom:10,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+        <div style={{marginTop:10,marginBottom:8,display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
           <div style={{fontSize:12,color:"#10B981"}}>■ Guessed</div>
           <div style={{fontSize:12,color:"#3B82F6"}}>■ Remaining</div>
           <div style={{fontSize:11,color:"#475569"}}>Scroll or +/− to zoom · drag to pan</div>
-          <div style={{marginLeft:"auto",fontSize:13,color:"#e2e8f0",fontWeight:700}}>{guessed.length}/196</div>
         </div>
+
+        {started && !done && (
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,padding:"10px 16px",background:"#080f1e",borderRadius:10,border:"1px solid #1e293b"}}>
+            <div>
+              {recordTime ? (
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <span style={{fontSize:11,color:"#475569",letterSpacing:1}}>RECORD</span>
+                  <span style={{fontSize:14,fontWeight:900,color:"#F59E0B"}}>👑 {recordHolder}</span>
+                  <span style={{fontSize:14,fontWeight:700,color:"#e2e8f0"}}>{fmtTime(recordTime)}</span>
+                </div>
+              ) : <span style={{fontSize:12,color:"#475569"}}>No record yet — be first!</span>}
+            </div>
+            <div style={{fontSize:32,fontWeight:900,color:timerColor,transition:"color 0.3s"}}>{fmtTime(time)}</div>
+          </div>
+        )}
 
         {!started ? (
           <div style={{textAlign:"center",padding:"20px 0"}}>
@@ -146,12 +192,19 @@ export default function Mode1({ user, scores, updateMode1, onBack }) {
           </div>
         ) : !done ? (
           <div style={{display:"flex",gap:12,marginBottom:16}}>
-            <input ref={inputRef} value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleGuess()} placeholder="Type a country..." style={{flex:1,background:shake?"#3f1515":"#0f172a",border:"2px solid "+(shake?"#EF4444":"#1e293b"),borderRadius:12,padding:"16px 20px",fontSize:18,color:"#e2e8f0",outline:"none",fontFamily:"inherit",transition:"all 0.2s"}}/>
+            <input ref={inputRef} value={input} onChange={e=>handleInput(e.target.value)}
+              onKeyDown={e=>{if(e.key==="Enter"){const r=resolveCountry(input.trim());if(!r||guessed.includes(r)){setShake(true);setTimeout(()=>setShake(false),400);setInput("")}}}}
+              placeholder="Type a country..."
+              style={{flex:1,background:shake?"#3f1515":"#0f172a",border:"2px solid "+(shake?"#EF4444":"#1e293b"),borderRadius:12,padding:"16px 20px",fontSize:18,color:"#e2e8f0",outline:"none",fontFamily:"inherit",transition:"all 0.2s"}}/>
+            <button onClick={giveUp} style={{background:"#0f172a",border:"1px solid #1e293b",color:"#475569",padding:"16px 18px",borderRadius:12,cursor:"pointer",fontSize:13}}>Give Up</button>
           </div>
         ) : (
-          <div style={{marginBottom:16,padding:20,background:"#0f2a1e",border:"2px solid #10B981",borderRadius:16,textAlign:"center"}}>
-            <div style={{fontSize:24,fontWeight:900,color:"#10B981"}}>✓ Complete! {fmtTime(time)}</div>
-            {myBest&&time+1<=myBest&&<div style={{fontSize:14,color:"#34d399",marginTop:4}}>New personal best! 🎉</div>}
+          <div style={{marginBottom:16,padding:20,background:guessed.length===COUNTRIES.length?"#0f2a1e":"#0f172a",border:`2px solid ${guessed.length===COUNTRIES.length?"#10B981":"#1e293b"}`,borderRadius:16,textAlign:"center"}}>
+            {guessed.length===COUNTRIES.length
+              ? <div style={{fontSize:24,fontWeight:900,color:"#10B981"}}>✓ Complete! {fmtTime(time)}</div>
+              : <div style={{fontSize:20,fontWeight:700,color:"#e2e8f0"}}>{guessed.length}/196 named</div>
+            }
+            {myBest&&guessed.length===COUNTRIES.length&&time+1<=myBest&&<div style={{fontSize:14,color:"#34d399",marginTop:4}}>New personal best! 🎉</div>}
             <button onClick={start} style={{marginTop:12,background:"#1e3a5f",border:"none",color:"#60a5fa",padding:"12px 24px",borderRadius:10,cursor:"pointer",fontSize:15,fontFamily:"inherit"}}>Play Again</button>
           </div>
         )}
