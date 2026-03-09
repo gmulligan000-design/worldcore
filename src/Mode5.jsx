@@ -144,10 +144,11 @@ function DuelMap({ highlightCode }) {
         <button onClick={()=>{targetZoom.current=Math.max(1,targetZoom.current*0.75);startAnim()}} style={{background:"rgba(10,22,40,0.95)",border:"1px solid #1e3a5f",color:"#e2e8f0",width:32,height:32,borderRadius:7,cursor:"pointer",fontSize:18,lineHeight:1}}>−</button>
       </div>
       <div ref={containerRef} onWheel={handleWheel} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} style={{cursor:isDragging.current?"grabbing":"grab"}}>
-        <svg viewBox="0 0 800 500" style={{width:"100%",display:"block",overflow:"hidden"}}>
+        <svg viewBox="0 0 800 500" overflow="hidden" style={{width:"100%",display:"block"}}>
+          <defs><clipPath id="clip"><rect x="0" y="0" width="800" height="500"/></clipPath></defs>
           <rect width="800" height="500" fill="#0a1628" stroke="none"/><rect width="800" height="500" fill="none" stroke="none"/>
           {!loaded&&<text x="400" y="250" textAnchor="middle" fill="#475569" fontSize="14">Loading map...</text>}
-          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
+          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`} clipPath="url(#clip)">
             {paths.map((p,i)=>{
               const isTarget = p.alpha3 && p.alpha3 === highlightAlpha3
               const isTiny = p.alpha2 && TINY_A2.has(p.alpha2) && isTarget
