@@ -110,11 +110,16 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
     let d=""
     for(const poly of polys){
       for(const ring of poly){
-        const pts=ring.map(([lo,la])=>{
-          const clo=Math.max(-179.9,Math.min(179.9,lo))
-          const cla=Math.max(-89,Math.min(89,la))
-          return [(clo+180)*(800/360),(90-cla)*(500/180)]
-        })
+        const pts=ring.map(([lo,la])=>[
+          (Math.max(-179.9,Math.min(179.9,lo))+180)*(800/360),
+          (90-Math.max(-89,Math.min(89,la)))*(500/180)
+        ])
+        // check if this ring is a streak (full-width but tiny height)
+        const rxs=pts.map(p=>p[0]),rys=pts.map(p=>p[1])
+        const rw=Math.max(...rxs)-Math.min(...rxs)
+        const rh=Math.max(...rys)-Math.min(...rys)
+        if(rw>600&&rh<20)continue
+        // split at antimeridian
         const segs=[[]]
         for(let i=0;i<pts.length;i++){
           if(i>0&&Math.abs(pts[i][0]-pts[i-1][0])>400)segs.push([])
@@ -122,10 +127,9 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
         }
         for(const seg of segs){
           if(seg.length<2)continue
-          for(let i=0;i<seg.length;i++){
-            d+=(i===0?"M":"L")+seg[i][0].toFixed(1)+","+seg[i][1].toFixed(1)
-          }
-          if(segs.length===1)d+="Z"
+          d+="M"+seg[0][0].toFixed(1)+","+seg[0][1].toFixed(1)
+          for(let i=1;i<seg.length;i++)d+="L"+seg[i][0].toFixed(1)+","+seg[i][1].toFixed(1)
+          d+="Z"
         }
       }
     }
