@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './supabase'
 
-// scores shape: { mode1: {Mi: secs, Gary: secs}, mode2: {Mi: {A: secs}}, mode3: {Mi: streak} }
 export function useScores() {
   const [scores, setScores] = useState({ mode1: {}, mode2: {}, mode3: {} })
   const [loading, setLoading] = useState(true)
@@ -23,7 +22,6 @@ export function useScores() {
 
   useEffect(() => {
     fetchScores()
-    // Real-time subscription
     const channel = supabase
       .channel('scores-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'scores' }, () => {
@@ -35,9 +33,9 @@ export function useScores() {
 
   const updateMode1 = useCallback(async (user, timeSeconds) => {
     const current = scores.mode1[user]
-    if (current && current <= timeSeconds) return // not a new record
+    if (current && current <= timeSeconds) return
     await supabase.from('scores').upsert(
-      { user_name: user, mode: 'mode1', letter: null, value: timeSeconds, updated_at: new Date().toISOString() },
+      { user_name: user, mode: 'mode1', letter: '', value: timeSeconds, updated_at: new Date().toISOString() },
       { onConflict: 'user_name,mode,letter' }
     )
   }, [scores])
@@ -55,7 +53,7 @@ export function useScores() {
     const current = scores.mode3[user] || 0
     if (streak <= current) return
     await supabase.from('scores').upsert(
-      { user_name: user, mode: 'mode3', letter: null, value: streak, updated_at: new Date().toISOString() },
+      { user_name: user, mode: 'mode3', letter: '', value: streak, updated_at: new Date().toISOString() },
       { onConflict: 'user_name,mode,letter' }
     )
   }, [scores])
