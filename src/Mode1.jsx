@@ -105,7 +105,7 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
   }
   const handleMouseUp=()=>{isDragging.current=false}
 
-  const proj=(lon,lat)=>[(lon+180)*(800/360),(90-lat)*(500/180)]
+  const proj=(lon,lat)=>[(lon+180)*(800/360),Math.max(0,Math.min(500,(90-lat)*(500/180)))]
   const toD=(geo)=>{
     if(!geo)return""
     const polys=geo.type==="Polygon"?[geo.coordinates]:geo.type==="MultiPolygon"?geo.coordinates:[]
@@ -167,6 +167,7 @@ function WorldMap({ guessedCodes, guessedAlpha2s }) {
               const isTiny=p.alpha2&&TINY_A2.has(p.alpha2)&&isWorld
               if(isTiny)return null
               const d=toD(p.geometry); if(!d)return null
+              if(p.alpha2==="AQ")return null
               return <path key={i} d={d}
                 fill={ig?"#10B981":isWorld?"#3B82F6":"#1e3a5f"}
                 stroke={ig?"#059669":isWorld?"#2563eb":"#0f2240"}

@@ -103,7 +103,7 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
   }
   const handleMouseUp=()=>{isDragging.current=false}
 
-  const proj=(lon,lat)=>[(lon+180)*(800/360),(90-lat)*(500/180)]
+  const proj=(lon,lat)=>[(lon+180)*(800/360),Math.max(0,Math.min(500,(90-lat)*(500/180)))]
   const toD=(geo)=>{
     if(!geo)return""
     const polys=geo.type==="Polygon"?[geo.coordinates]:geo.type==="MultiPolygon"?geo.coordinates:[]
@@ -170,6 +170,7 @@ function WorldMap({ targetCodes, guessedCodes, targetAlpha2s, done }) {
               if (ig) { fill = "#10B981"; stroke = "#059669" }
               else if (it && done) { fill = "#F59E0B"; stroke = "#d97706" }
               else if (it) { fill = "#EF4444"; stroke = "#b91c1c" }
+              if(p.alpha2==="AQ")return null
               return <path key={i} d={d} fill={fill} stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/>
             })}
             {tinyPins.map((pin) => {
